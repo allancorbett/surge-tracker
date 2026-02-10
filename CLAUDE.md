@@ -1,4 +1,4 @@
-# Contraction Tracker
+# Surge Tracker
 
 ## Architecture
 Single-file vanilla JS PWA. Zero dependencies, zero build step.
@@ -9,12 +9,12 @@ Single-file vanilla JS PWA. Zero dependencies, zero build step.
 - `vercel.json` — Vercel static deploy config
 
 ## Data Model
-`localStorage` key: `"contractions"`
+`localStorage` key: `"surges"`
 Array of objects: `{ start: ISO8601, end: ISO8601 | null }`
 Sorted by `start` ascending.
 
 ## Key Functions
-- `toggleContraction()` — start/stop a contraction timer
+- `toggleContraction()` — start/stop a surge timer
 - `render()` — full re-render of stats, log, and chart
 - `getContractions()` / `saveContractions()` — localStorage read/write
 - `drawChart()` — Canvas 2D scatter plot of intervals over time

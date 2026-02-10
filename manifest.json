@@ -1,6 +1,6 @@
 {
-  "name": "Contraction Tracker",
-  "short_name": "Contractions",
+  "name": "Surge Tracker",
+  "short_name": "Surges",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#f0f0f8",
