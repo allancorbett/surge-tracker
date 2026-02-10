@@ -1,6 +1,7 @@
 {
-  "name": "Surge Tracker",
+  "name": "Surge Tracker — Free & Private Contraction Timer",
   "short_name": "Surges",
+  "description": "Free, private contraction timer for labour. No accounts, no tracking, no data collection. Works offline.",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#f0f0f8",
