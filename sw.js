@@ -1,4 +1,4 @@
-const CACHE = 'contraction-tracker-v1';
+const CACHE = 'surge-tracker-v1';
 const ASSETS = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#7a5ab3">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Contraction Tracker</title>
+  <title>Surge Tracker</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="apple-touch-icon" href="icon-192.png">
@@ -327,11 +327,11 @@
   </style>
 </head>
 <body>
-  <h1>Contraction Tracker</h1>
+  <h1>Surge Tracker</h1>
 
   <div class="btn-container">
     <button class="track-btn" id="trackBtn" onclick="toggleContraction()">
-      Start<br>Contraction
+      Start<br>Surge
     </button>
     <div class="timer" id="timer"></div>
   </div>
@@ -354,7 +354,7 @@
 
   <div class="modal-overlay" id="addModal" onclick="if(event.target===this)closeAddModal()">
     <div class="modal">
-      <h2>Add Past Contraction</h2>
+      <h2>Add Past Surge</h2>
       <label for="addDate">Date</label>
       <input type="date" id="addDate">
       <label for="addTimeStart">Start Time</label>
@@ -370,10 +370,13 @@
 
   <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="handleImport(event)">
 
-  <footer>Contraction Tracker</footer>
+  <footer>
+    No data leaves your device. All surges are stored locally in your browser. No analytics, no cookies, no tracking.<br>
+    <a href="https://github.com/allancorbett/contraction-tracker" style="color:#7a5ab3;">View on GitHub</a>
+  </footer>
 
   <script>
-    const STORAGE_KEY = 'contractions';
+    const STORAGE_KEY = 'surges';
     let activeStart = null;
     let timerInterval = null;
 
@@ -390,7 +393,7 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
     }
 
-    // Each contraction: { start: ISO string, end: ISO string | null }
+    // Each surge: { start: ISO string, end: ISO string | null }
 
     // --- Timer ---
     function toggleContraction() {
@@ -406,7 +409,7 @@
         clearInterval(timerInterval);
         timerInterval = null;
         btn.classList.remove('active');
-        btn.innerHTML = 'Start<br>Contraction';
+        btn.innerHTML = 'Start<br>Surge';
         document.getElementById('timer').textContent = '';
         btn.classList.add('pop');
         setTimeout(() => btn.classList.remove('pop'), 300);
@@ -415,7 +418,7 @@
         // Start contraction
         activeStart = new Date().toISOString();
         btn.classList.add('active');
-        btn.innerHTML = 'Stop<br>Contraction';
+        btn.innerHTML = 'Stop<br>Surge';
         updateTimer();
         timerInterval = setInterval(updateTimer, 100);
       }
@@ -507,7 +510,7 @@
     function renderLog(list) {
       const container = document.getElementById('log');
       if (list.length === 0) {
-        container.innerHTML = '<div class="empty-state">No contractions recorded yet.<br>Tap the button to start tracking.</div>';
+        container.innerHTML = '<div class="empty-state">No surges recorded yet.<br>Tap the button to start tracking.</div>';
         return;
       }
 
@@ -525,7 +528,7 @@
       days.forEach(day => {
         const entries = grouped[day].sort((a, b) => b.start.localeCompare(a.start));
         html += '<div class="day-group">';
-        html += '<div class="day-header">' + fmtDate(entries[0].start) + ' &mdash; ' + entries.length + ' contraction' + (entries.length !== 1 ? 's' : '') + '</div>';
+        html += '<div class="day-header">' + fmtDate(entries[0].start) + ' &mdash; ' + entries.length + ' surge' + (entries.length !== 1 ? 's' : '') + '</div>';
 
         entries.forEach(entry => {
           const duration = entry.end
@@ -575,7 +578,7 @@
         ctx.fillStyle = '#ccc';
         ctx.font = '13px -apple-system, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('Need at least 2 contractions to show chart', w / 2, h / 2);
+        ctx.fillText('Need at least 2 surges to show chart', w / 2, h / 2);
         return;
       }
 
@@ -727,7 +730,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'contractions-' + new Date().toISOString().slice(0, 10) + '.csv';
+      a.download = 'surges-' + new Date().toISOString().slice(0, 10) + '.csv';
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -770,7 +773,7 @@
     }
 
     function clearAll() {
-      if (confirm('Delete all contraction data? This cannot be undone.')) {
+      if (confirm('Delete all surge data? This cannot be undone.')) {
         saveContractions([]);
         render();
       }
