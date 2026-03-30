@@ -124,6 +124,66 @@
       color: #5a3d7a;
     }
 
+    .recent-intervals {
+      width: 100%;
+      max-width: 500px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .recent-intervals h2 {
+      font-size: 15px;
+      color: #5a3d7a;
+      margin-bottom: 10px;
+    }
+
+    .interval-row {
+      display: flex;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #f8f5fd;
+      font-size: 13px;
+      gap: 8px;
+    }
+
+    .interval-row:last-child {
+      border-bottom: none;
+    }
+
+    .interval-label {
+      color: #999;
+      min-width: 50px;
+      flex-shrink: 0;
+    }
+
+    .interval-bar-bg {
+      flex: 1;
+      height: 20px;
+      background: #f0ecf5;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .interval-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #b8a8f7, #7a5ab3);
+      border-radius: 10px;
+      min-width: 2px;
+    }
+
+    .interval-value {
+      font-weight: 600;
+      color: #5a3d7a;
+      min-width: 70px;
+      text-align: right;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
     .actions {
       display: flex;
       gap: 8px;
@@ -354,6 +414,8 @@
     <button onclick="clearAll()">Clear All</button>
   </div>
 
+  <div class="recent-intervals" id="recentIntervals" style="display:none"></div>
+
   <div class="chart-section">
     <h2>Intervals Over Time</h2>
     <canvas id="chart"></canvas>
@@ -478,27 +540,26 @@
     function render() {
       const list = getContractions();
       renderStats(list);
+      renderRecentIntervals(list);
       renderLog(list);
       drawChart(list);
+    }
+
+    function avgIntervalForLast(list, n) {
+      if (list.length < 2) return null;
+      const recent = list.slice(-n);
+      if (recent.length < 2) return null;
+      let totalMs = 0;
+      for (let i = 1; i < recent.length; i++) {
+        totalMs += new Date(recent[i].start).getTime() - new Date(recent[i - 1].start).getTime();
+      }
+      return totalMs / (recent.length - 1);
     }
 
     function renderStats(list) {
       const container = document.getElementById('stats');
       const today = new Date().toDateString();
       const todayCount = list.filter(c => new Date(c.start).toDateString() === today).length;
-
-      // Average interval (last 10)
-      let avgInterval = '--';
-      if (list.length >= 2) {
-        const recent = list.slice(-10);
-        let totalMs = 0;
-        let count = 0;
-        for (let i = 1; i < recent.length; i++) {
-          totalMs += new Date(recent[i].start).getTime() - new Date(recent[i - 1].start).getTime();
-          count++;
-        }
-        if (count > 0) avgInterval = fmtDuration(totalMs / count);
-      }
 
       // Average duration
       let avgDuration = '--';
@@ -509,11 +570,63 @@
         avgDuration = fmtDuration(totalDur / withEnd.length);
       }
 
-      container.innerHTML =
+      // Average intervals for last 3, 5, 10
+      const avg3 = avgIntervalForLast(list, 3);
+      const avg5 = avgIntervalForLast(list, 5);
+      const avg10 = avgIntervalForLast(list, 10);
+
+      let html =
         '<span class="stat-badge">Today: <strong>' + todayCount + '</strong></span>' +
         '<span class="stat-badge">Total: <strong>' + list.length + '</strong></span>' +
-        '<span class="stat-badge">Avg interval: <strong>' + avgInterval + '</strong></span>' +
         '<span class="stat-badge">Avg duration: <strong>' + avgDuration + '</strong></span>';
+
+      if (avg3 !== null)
+        html += '<span class="stat-badge">Last 3: <strong>' + fmtDuration(avg3) + '</strong></span>';
+      if (avg5 !== null)
+        html += '<span class="stat-badge">Last 5: <strong>' + fmtDuration(avg5) + '</strong></span>';
+      if (avg10 !== null)
+        html += '<span class="stat-badge">Last 10: <strong>' + fmtDuration(avg10) + '</strong></span>';
+
+      container.innerHTML = html;
+    }
+
+    function renderRecentIntervals(list) {
+      const container = document.getElementById('recentIntervals');
+      if (list.length < 2) {
+        container.style.display = 'none';
+        return;
+      }
+
+      const recentCount = Math.min(10, list.length);
+      const recent = list.slice(-recentCount);
+      const intervals = [];
+      for (let i = 1; i < recent.length; i++) {
+        const ms = new Date(recent[i].start).getTime() - new Date(recent[i - 1].start).getTime();
+        intervals.push({ time: new Date(recent[i].start), ms: ms });
+      }
+
+      if (intervals.length === 0) {
+        container.style.display = 'none';
+        return;
+      }
+
+      const maxMs = Math.max(...intervals.map(iv => iv.ms));
+
+      let html = '<h2>Recent Intervals</h2>';
+      // Show newest first
+      for (let i = intervals.length - 1; i >= 0; i--) {
+        const iv = intervals[i];
+        const pct = maxMs > 0 ? Math.round((iv.ms / maxMs) * 100) : 0;
+        const timeLabel = iv.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        html += '<div class="interval-row">';
+        html += '<span class="interval-label">' + timeLabel + '</span>';
+        html += '<div class="interval-bar-bg"><div class="interval-bar-fill" style="width:' + pct + '%"></div></div>';
+        html += '<span class="interval-value">' + fmtDuration(iv.ms) + '</span>';
+        html += '</div>';
+      }
+
+      container.innerHTML = html;
+      container.style.display = 'block';
     }
 
     function renderLog(list) {
