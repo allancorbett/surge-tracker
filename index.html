@@ -321,9 +321,15 @@
       margin-bottom: 12px;
     }
 
-    .chart-section canvas {
-      width: 100% !important;
-      height: auto !important;
+    .chart-scroll-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      width: 100%;
+    }
+
+    .chart-scroll-wrapper canvas {
+      display: block;
+      height: 200px;
     }
 
     footer {
@@ -356,7 +362,9 @@
 
   <div class="chart-section">
     <h2>Intervals Over Time</h2>
-    <canvas id="chart"></canvas>
+    <div class="chart-scroll-wrapper" id="chartScrollWrapper">
+      <canvas id="chart"></canvas>
+    </div>
   </div>
 
   <div class="log-container" id="log"></div>
@@ -571,23 +579,23 @@
     // --- Chart ---
     function drawChart(list) {
       const canvas = document.getElementById('chart');
+      const wrapper = document.getElementById('chartScrollWrapper');
       const ctx = canvas.getContext('2d');
       const dpr = window.devicePixelRatio || 1;
-      const w = canvas.parentElement.clientWidth - 32;
+      const visibleW = wrapper.clientWidth;
       const h = 200;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      canvas.style.width = w + 'px';
-      canvas.style.height = h + 'px';
-      ctx.scale(dpr, dpr);
-
-      ctx.clearRect(0, 0, w, h);
 
       if (list.length < 2) {
+        canvas.width = visibleW * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = visibleW + 'px';
+        canvas.style.height = h + 'px';
+        ctx.scale(dpr, dpr);
+        ctx.clearRect(0, 0, visibleW, h);
         ctx.fillStyle = '#ccc';
         ctx.font = '13px -apple-system, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('Need at least 2 surges to show chart', w / 2, h / 2);
+        ctx.fillText('Need at least 2 surges to show chart', visibleW / 2, h / 2);
         return;
       }
 
@@ -604,6 +612,17 @@
       }
 
       if (intervals.length === 0) return;
+
+      // Width: 60px per data point, minimum visibleW
+      const minPointSpacing = 60;
+      const w = Math.max(visibleW, intervals.length * minPointSpacing + 66);
+
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, w, h);
 
       const pad = { top: 20, right: 16, bottom: 30, left: 50 };
       const cw = w - pad.left - pad.right;
@@ -633,19 +652,32 @@
         ctx.fillText(m + 'm', pad.left - 8, y);
       }
 
-      // X axis labels
+      // X axis labels — one per data point or thinned out
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
+      const labelEvery = Math.max(1, Math.floor(intervals.length / Math.floor(w / 80)));
+      intervals.forEach((pt, i) => {
+        if (i % labelEvery !== 0 && i !== intervals.length - 1) return;
+        const x = intervals.length === 1
+          ? pad.left + cw / 2
+          : pad.left + ((pt.time - minTime) / (maxTime - minTime)) * cw;
+        const d = new Date(pt.time);
+        const label = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        ctx.fillText(label, x, h - pad.bottom + 8);
+      });
+
+      // Connect with line
       if (intervals.length > 1) {
-        const timeRange = maxTime - minTime;
-        const labelCount = Math.min(5, intervals.length);
-        for (let i = 0; i < labelCount; i++) {
-          const t = minTime + (timeRange * i) / (labelCount - 1);
-          const x = pad.left + (cw * i) / (labelCount - 1);
-          const d = new Date(t);
-          const label = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          ctx.fillText(label, x, h - pad.bottom + 8);
-        }
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(122, 90, 179, 0.3)';
+        ctx.lineWidth = 1.5;
+        intervals.forEach((pt, i) => {
+          const x = pad.left + ((pt.time - minTime) / (maxTime - minTime)) * cw;
+          const y = pad.top + ch - (pt.ms / 60000 / maxMins) * ch;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
       }
 
       // Plot points
@@ -664,20 +696,18 @@
         ctx.stroke();
       });
 
-      // Connect with line
-      if (intervals.length > 1) {
-        ctx.beginPath();
-        ctx.strokeStyle = 'rgba(122, 90, 179, 0.3)';
-        ctx.lineWidth = 1.5;
-        intervals.forEach((pt, i) => {
-          const x = pad.left + ((pt.time - minTime) / (maxTime - minTime)) * cw;
-          const y = pad.top + ch - (pt.ms / 60000 / maxMins) * ch;
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
+      // Scroll to show last hour of data (only on data change, not resize)
+      if (!drawChart._resizing) {
+        const oneHourAgo = maxTime - 60 * 60 * 1000;
+        if (maxTime - minTime > 60 * 60 * 1000) {
+          const scrollX = pad.left + ((oneHourAgo - minTime) / (maxTime - minTime)) * cw - 20;
+          wrapper.scrollLeft = Math.max(0, scrollX);
+        } else {
+          wrapper.scrollLeft = wrapper.scrollWidth;
+        }
       }
     }
+
 
     // --- Actions ---
     function deleteContraction(index) {
@@ -789,7 +819,11 @@
     }
 
     // --- Init ---
-    window.addEventListener('resize', () => drawChart(getContractions()));
+    window.addEventListener('resize', () => {
+      drawChart._resizing = true;
+      drawChart(getContractions());
+      drawChart._resizing = false;
+    });
     render();
 
     // Register service worker
