@@ -124,29 +124,58 @@
       color: #5a3d7a;
     }
 
-    .actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: center;
-      width: 100%;
-      max-width: 500px;
-      margin-bottom: 16px;
-    }
-
-    .actions button {
-      background: #fff;
+    .settings-btn {
+      background: none;
       border: 1px solid #e8e0f0;
-      border-radius: 8px;
-      padding: 8px 14px;
+      border-radius: 10px;
+      color: #aaa;
       font-size: 13px;
-      color: #555;
       cursor: pointer;
+      padding: 8px 18px;
+      margin-top: 4px;
+      margin-bottom: 16px;
+      line-height: 1;
+      -webkit-tap-highlight-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    .actions button:hover {
+    .settings-btn:hover {
       border-color: #7a5ab3;
       color: #7a5ab3;
+    }
+
+    .settings-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .settings-actions button {
+      background: #fff;
+      border: 1px solid #e8e0f0;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 15px;
+      color: #444;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .settings-actions button:hover {
+      border-color: #7a5ab3;
+      color: #7a5ab3;
+    }
+
+    .settings-actions button.danger {
+      color: #b35a5a;
+      border-color: #f0d0d0;
+    }
+
+    .settings-actions button.danger:hover {
+      border-color: #b35a5a;
     }
 
     .log-container {
@@ -353,12 +382,7 @@
 
   <div class="stats" id="stats"></div>
 
-  <div class="actions">
-    <button onclick="showAddModal()">Add Past</button>
-    <button onclick="exportCSV()">Export CSV</button>
-    <button onclick="importCSV()">Import CSV</button>
-    <button onclick="clearAll()">Clear All</button>
-  </div>
+  <div class="log-container" id="log"></div>
 
   <div class="chart-section">
     <h2>Intervals Over Time</h2>
@@ -367,7 +391,7 @@
     </div>
   </div>
 
-  <div class="log-container" id="log"></div>
+  <button class="settings-btn" onclick="openSettings()">&#9881; Settings</button>
 
   <div class="modal-overlay" id="addModal" onclick="if(event.target===this)closeAddModal()">
     <div class="modal">
@@ -381,6 +405,21 @@
       <div class="modal-actions">
         <button onclick="closeAddModal()">Cancel</button>
         <button class="primary" onclick="addPast()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="settingsModal" onclick="if(event.target===this)closeSettings()">
+    <div class="modal">
+      <h2>Settings</h2>
+      <div class="settings-actions">
+        <button onclick="closeSettings();showAddModal()">Add Past Surge</button>
+        <button onclick="closeSettings();exportCSV()">Export CSV</button>
+        <button onclick="closeSettings();importCSV()">Import CSV</button>
+        <button class="danger" onclick="closeSettings();clearAll()">Clear All Data</button>
+      </div>
+      <div class="modal-actions" style="margin-top:16px">
+        <button onclick="closeSettings()">Close</button>
       </div>
     </div>
   </div>
@@ -508,9 +547,9 @@
         if (count > 0) avgInterval = fmtDuration(totalMs / count);
       }
 
-      // Average duration
+      // Average duration (last 10 completed)
       let avgDuration = '--';
-      const withEnd = list.filter(c => c.end);
+      const withEnd = list.filter(c => c.end).slice(-10);
       if (withEnd.length > 0) {
         const totalDur = withEnd.reduce((s, c) =>
           s + (new Date(c.end).getTime() - new Date(c.start).getTime()), 0);
@@ -816,6 +855,14 @@
         saveContractions([]);
         render();
       }
+    }
+
+    function openSettings() {
+      document.getElementById('settingsModal').classList.add('open');
+    }
+
+    function closeSettings() {
+      document.getElementById('settingsModal').classList.remove('open');
     }
 
     // --- Init ---
