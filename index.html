@@ -126,17 +126,23 @@
 
     .settings-btn {
       background: none;
-      border: none;
-      color: #bbb;
-      font-size: 22px;
+      border: 1px solid #e8e0f0;
+      border-radius: 10px;
+      color: #aaa;
+      font-size: 13px;
       cursor: pointer;
-      padding: 4px 8px;
-      margin-bottom: 12px;
+      padding: 8px 18px;
+      margin-top: 4px;
+      margin-bottom: 16px;
       line-height: 1;
       -webkit-tap-highlight-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .settings-btn:hover {
+      border-color: #7a5ab3;
       color: #7a5ab3;
     }
 
@@ -376,8 +382,6 @@
 
   <div class="stats" id="stats"></div>
 
-  <button class="settings-btn" onclick="openSettings()" title="Settings">&#9881;</button>
-
   <div class="chart-section">
     <h2>Intervals Over Time</h2>
     <div class="chart-scroll-wrapper" id="chartScrollWrapper">
@@ -386,6 +390,8 @@
   </div>
 
   <div class="log-container" id="log"></div>
+
+  <button class="settings-btn" onclick="openSettings()">&#9881; Settings</button>
 
   <div class="modal-overlay" id="addModal" onclick="if(event.target===this)closeAddModal()">
     <div class="modal">
